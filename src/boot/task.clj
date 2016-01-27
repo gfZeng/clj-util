@@ -7,9 +7,7 @@
   (with-pre-wrap fileset
     (when-let [n (symbol (namespace method))]
       (require n)
-      ((resolve method)
-       {:port port
-        :join? join}))
+      ((resolve method) :port port :join? join))
     fileset))
 
 (deftask extend-core []

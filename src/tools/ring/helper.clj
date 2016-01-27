@@ -3,7 +3,6 @@
   (:require [clojure.string :as string]
             [clojure.edn :as edn]
             [tools.util :as util]
-            [ring.middleware.json :refer (wrap-json-params wrap-json-response)]
             [ring.util.response :refer (content-type)])
 
   (:import [clojure.lang ExceptionInfo]))
@@ -25,12 +24,6 @@
                 req)]
       (handler req))))
 
-(defn wrap-clojurize [handler]
-  (wrap-json-params
-   (wrap-edn-params
-    (fn [req]
-      (handler (update req :params json->clj))))))
-
 (defn- as-edn [x]
   (if (coll? x) (pr-str x) x))
 
@@ -39,17 +32,6 @@
     (if (contains? (:headers res) "Content-Type")
       res
       (content-type res "application/edn; charset=utf-8"))))
-
-(defn wrap-api [handler]
-  (wrap-json-response
-   (fn [{:as req :keys [uri]}]
-     (if (or (re-find #"\.edn$" uri)
-             (re-find #"edn" (clojure.core/get-in req [:headers "accept"])))
-       (edn-response
-        (handler (-> req
-                     (update-in [:headers "accept"] str ", edn")
-                     (assoc :uri (string/replace uri #"\.edn$" "")))))
-       (handler (assoc req :uri (string/replace uri #"\.json" "")))))))
 
 (defn translate-msg [key]
   (string/replace (name key) #"_|-" " "))
