@@ -11,8 +11,7 @@
   (:require
    [clojure.walk :as walk]
    [clojure.string :as string]
-   #?@(:cljs [[reagent.core :as r]
-              [goog.string :as gstring :refer (format)]
+   #?@(:cljs [[goog.string :as gstring :refer (format)]
               [goog.string.format]]))
 
   #?(:clj (:import javax.xml.bind.DatatypeConverter)))
@@ -256,16 +255,8 @@
        ([node dname] (-> (data node)
                          (aget (camel-case (name dname))))))
 
-     (defn as-html [component]
-       (if (seq? component)
-         (apply str (map r/render-component-to-string component))
-         (r/render-component-to-string component)))
      (defn refresh-page []
        (js/window.location.reload))
-     (defn ->html [node component]
-       (if (.-html node)
-         (.html node (as-html component))
-         (set! (.-innerHTML node) (as-html component))))
      (defn js->clj
        [x & {:as opts
              :keys [key-fn]
@@ -291,7 +282,9 @@
                                     [(key-fn k) (thisfn (aget x k))]))
 
                        :else x))]
-             (f x))))))
+             (f x))))
+     )
+   )
 
 
 ;;; Clojure
