@@ -1,6 +1,6 @@
 (ns tools.history
-  (:require [[goog.events :as events]
-             [goog.history.EventType :as EventType]])
+  (:require [goog.events :as events]
+            [goog.history.EventType :as EventType])
   (:import goog.History))
 
 (defonce HISTORY (History.))
@@ -13,5 +13,5 @@
 (defn token []
   (.getToken HISTORY))
 
-(defn set-token! []
-  (.setToken HISTORY))
+(defn set-token! [t]
+  (.setToken HISTORY t))

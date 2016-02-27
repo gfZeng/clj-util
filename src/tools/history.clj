@@ -2,5 +2,5 @@
 
 
 (defmacro on-navigate [& body]
-  `(tools.history/listen:history
+  `(tools.history/listen:navigate
     (fn [] ~@body)))
