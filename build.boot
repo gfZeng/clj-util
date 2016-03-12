@@ -10,6 +10,7 @@
 
 
 (task-options!
+ push {:gpg-sign false}
  pom {:project  'clj-util
       :version  +version+
       :url      "https://github.com/gfZeng/clj-util"
