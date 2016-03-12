@@ -11,7 +11,7 @@
 
 (task-options!
  push {:gpg-sign false}
- pom {:project  'clj-util
+ pom {:project  'clj-integral
       :version  +version+
       :url      "https://github.com/gfZeng/clj-util"
       :scm      {:url "https://github.com/gfZeng/Korma"}
