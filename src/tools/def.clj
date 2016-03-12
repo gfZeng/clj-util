@@ -61,10 +61,10 @@
      (when (and ~@(map first bindings))
        ~then)))
 
-(defmacro cond*
+(defmacro let-cond
   [& clauses]
   (when clauses
-    (list (if (:let (meta (first clauses)))
+    (list (if (vector? (first clauses))
             'if-let
             'if) (first clauses)
             (if (next clauses)

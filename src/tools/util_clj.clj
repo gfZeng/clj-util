@@ -114,7 +114,6 @@
 
 (defalias name-with-attributes name-with-attributes')
 
-
 ;;;; define for cljs
 (defmacro on-ready [& body]
   `(js/$ (fn [] ~@body)))
@@ -133,3 +132,63 @@
   `(let [~sym (js/$ ~sel)]
      (when (aget ~sym 0)
        ~@body)))
+
+(defn body-syntax-parse [body]
+  (if (some-> (last body) first
+              (= '.catch))
+    [(butlast body) (let [[_ err & err-body] (last body)]
+                      `(.catch (fn [~err] ~@err-body)))]
+    [body `identity]))
+
+(defmacro let-promise [bindings & body]
+  (let [[body catch] (body-syntax-parse body)]
+    `(->
+      (js/Promise.all
+       (into-array ~(vec (take-nth 2 (rest bindings)))))
+      ~catch
+      (.then (fn [[~@(take-nth 2 bindings)]]
+               ~@body)))))
+
+(defmacro let-promise-> [bindings & body]
+  (let [[body catch] (body-syntax-parse body)
+        expand (fn expand [[sym expr & rest-bindings]]
+                 `(-> ~expr
+                      ~catch
+                      (.then (fn [~sym]
+                               ~@(if rest-bindings
+                                   [(expand rest-bindings)]
+                                   body)))))]
+    (expand bindings)))
+
+(defmacro let-fetch [bindings & body]
+  (let [syms (take-nth 2 bindings)
+        exprs [(for [expr (take-nth 2 (rest bindings))]
+                 `(compile-fetch expr))]]
+    `(let-promise ~(vec (interleave syms exprs)))))
+
+(defmacro let-fetch-> [bindings & body]
+  (let [syms (take-nth 2 bindings)
+        exprs [(for [expr (take-nth 2 (rest bindings))]
+                 `(compile-fetch expr))]]
+    `(let-promise-> ~(vec (interleave syms exprs)))))
+
+(defmacro form [opts & fields]
+       `(binding [*form-opts* (atom
+                               (let [opts# ~opts]
+                                 (if (instance? ~'cljs.core/Atom opts#)
+                                   {:for opts#}
+                                   opts#)))]
+          (let [form-opts# *form-opts*
+                ~'*form-data* (:for @form-opts#)
+                ~'*flush-in* (fn
+                               ([] (form-flush-in @form-opts#))
+                               ([f#] (form-flush-in @form-opts# f#)))]
+            (add-watch ~'*form-data* :update-fields-values
+                       (fn [r# k# ov# nv#]
+                         (let [diff-v# (first (data/diff nv# ov#))]
+                           (doseq [f# (:>fields @form-opts#)]
+                             (when-let [value# (get-in diff-v# (:for f#))]
+                               (-> (js/document.getElementById (:id f#))
+                                   .-value
+                                   (set! ((or (:> f#) identity) value#))))))))
+            [:form ~@fields])))

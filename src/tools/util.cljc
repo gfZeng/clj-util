@@ -11,7 +11,9 @@
   (:require
    [clojure.walk :as walk]
    [clojure.string :as string]
-   #?@(:cljs [[goog.string :as gstring :refer (format)]
+   [clojure.data :as data]
+   #?@(:cljs [[cljs.reader :as reader]
+              [goog.string :as gstring :refer (format)]
               [goog.string.format]]))
 
   #?(:clj (:import javax.xml.bind.DatatypeConverter)))
@@ -283,6 +285,62 @@
 
                        :else x))]
              (f x))))
+
+     (let [format-fns
+           {:edn  {:body> pr-str
+                   :body< reader/read-string}
+            :json {:body> (comp js/JSON.stringify clj->js)
+                   :body< #(-> % js/JSON.parse
+                               (js->clj :keywordize-keys true))}}]
+       (defn compile-fetch [{:as settings
+                             :keys [url format body> body< body]
+                             :or {format :edn}}]
+         (let [body< (or body< (-> format-fns format :body<))
+               body> (or body> (-> format-fns format :body>))]
+           (-> (js/fetch url (cljs.core/clj->js
+                              (dissoc (update settings :body body>)
+                                      :url :format)))
+               (.then #(.text %))
+               (.then #(js/Promise.
+                        (fn [rs rj])))))))
+     (def ^:dynamic *form-opts* nil)
+
+     (defn form-flush-in
+       ([form-opts]
+        (run! #(form-flush-in form-opts %) (:>fields form-opts)))
+       ([form-opts f]
+        (swap! (:for form-opts) assoc-in (:for f)
+               ((or (:< f) identity)
+                (-> (:id f)
+                    js/document.getElementById
+                    .-value)))))
+
+     (let [counter (atom -1)
+           field-id (fn []
+                      (str "field-" (swap! counter inc)))]
+       (defn field
+         ([opts]
+          (field opts nil))
+         ([opts attrs]
+          (let [opts (if (map? opts) opts {:for opts})]
+            (let [data (:for @*form-opts*)
+                  auto-flush-in? (:auto-flush-in? opts (:auto-flush-in? @*form-opts*))
+                  attrs (-> attrs
+                            (assoc
+                             :id  (or (:id attrs) (field-id))
+                             :value (get-in @data (:for opts))
+                             :on-change
+                             (fn [e]
+                               (when auto-flush-in?
+                                 (swap! data assoc-in (:for opts)
+                                        ((or (:< opts)
+                                             identity)
+                                         (.. e -target -value))))
+                               (when-let [f (:on-change attrs)]
+                                 (f e)))))]
+              (swap! *form-opts* update :>fields conj
+                     (assoc opts :id (:id attrs)))
+              [:input attrs])))))
      )
    )
 
