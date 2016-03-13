@@ -3,9 +3,6 @@
              (:require-macros
               [tools.def :refer (when-let* defalias)])])
   #?(:clj (:require
-           [clj-time.core :as t]
-           [clj-time.coerce :as tc]
-           [clj-time.format :as tf]
            [tools.def :refer :all
                       :rename {name-with-attributes name-with-attributes'}]))
   (:require
