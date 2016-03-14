@@ -49,8 +49,7 @@
 (defalias name-with-attributes name-with-attributes')
 
 (compile-if (require 'clj-time.core)
-            (load "util_time")
-            (println "[WARNING] clj-time not in dependencies, skip init."))
+            (load "util_time"))
 
 ;;;; define for cljs
 (defmacro on-ready [& body]
