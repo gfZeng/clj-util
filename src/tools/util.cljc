@@ -319,6 +319,8 @@
          ([opts]
           (field opts nil))
          ([opts attrs]
+          (field opts attrs nil))
+         ([opts attrs option-values]
           (let [opts (if (map? opts) opts {:for opts})]
             (let [data (:for @*form-opts*)
                   auto-flush-in? (:auto-flush-in? opts (:auto-flush-in? @*form-opts*))
@@ -334,10 +336,16 @@
                                              identity)
                                          (.. e -target -value))))
                                (when-let [f (:on-change attrs)]
-                                 (f e)))))]
+                                 (f e)))))
+                  attrs (cond-> attrs
+                          option-values (dissoc :value))]
               (swap! *form-opts* update :>fields conj
                      (assoc opts :id (:id attrs)))
-              [:input attrs])))))
+              (if option-values
+                [:select attrs
+                 (for [[v repr] option-values]
+                   [:option {:value v} repr])]
+                [:input attrs]))))))
      )
    )
 
