@@ -124,8 +124,8 @@
                        (fn [r# k# ov# nv#]
                          (let [diff-v# (first (data/diff nv# ov#))]
                            (doseq [f# (:>fields @form-opts#)]
-                             (when-let [value# (get-in diff-v# (:for f#))]
-                               (-> (js/document.getElementById (:id f#))
-                                   .-value
+                             (when-let* [value# (get-in diff-v# (:for f#))
+                                         ele# (js/document.getElementById (:id f#))]
+                               (-> ele# .-value
                                    (set! ((or (:> f#) identity) value#))))))))
             [:form ~@fields])))
