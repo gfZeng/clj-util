@@ -1,6 +1,5 @@
 (ns tools.util
-  #?@(:cljs [(:refer-clojure :exclude [js->clj])
-             (:require-macros
+  #?@(:cljs [(:require-macros
               [tools.def :refer (when-let* defalias)])])
   #?(:clj (:require
            [tools.def :refer :all
@@ -256,50 +255,31 @@
 
      (defn refresh-page []
        (js/window.location.reload))
-     (defn js->clj
-       [x & {:as opts
-             :keys [key-fn]
-             :or {key-fn str}}]
-       (cond
-         (satisfies? x IEncodeClojure)
-           (-js->clj x (apply array-map opts))
-
-         :else
-           (let [f (fn thisfn [x]
-                     (cond
-                       (seq? x)
-                         (doall (map thisfn x))
-
-                       (coll? x)
-                         (into (empty x) (map thisfn x))
-
-                       (array? x)
-                         (vec (map thisfn x))
-
-                       (identical? (type x) js/Object)
-                         (into {} (for [k (js-keys x)]
-                                    [(key-fn k) (thisfn (aget x k))]))
-
-                       :else x))]
-             (f x))))
 
      (let [format-fns
            {:edn  {:body> pr-str
-                   :body< reader/read-string}
+                   :body< reader/read-string
+                   :headers {"Content-Type" "application/edn; charset=UTF-8"}}
             :json {:body> (comp js/JSON.stringify clj->js)
                    :body< #(-> % js/JSON.parse
-                               (js->clj :keywordize-keys true))}}]
-       (defn compile-fetch [{:as settings
-                             :keys [url format body> body< body]
-                             :or {format :edn}}]
+                               (js->clj :keywordize-keys true))
+                   :headers {"Content-Type" "application/json; charset=UTF-8"}}}]
+       (defn fetch [{:as settings
+                     :keys [url format body> body<]
+                     :or {format :edn}}]
          (let [body< (or body< (-> format-fns format :body<))
-               body> (or body> (-> format-fns format :body>))]
+               body> (or body> (-> format-fns format :body>))
+               headers (merge (-> format-fns format :headers)
+                              (:headers settings))]
            (-> (js/fetch url (cljs.core/clj->js
-                              (dissoc (update settings :body body>)
-                                      :url :format)))
+                              (cond-> settings
+                                true (dissoc :url :format :body< :body>)
+                                true (assoc :headers headers)
+                                (:body settings) (update :body body>))))
                (.then #(.text %))
                (.then #(js/Promise.
-                        (fn [rs rj])))))))
+                        (fn [rs rj]
+                          (rs (body< %)))))))))
      (def ^:dynamic *form-opts* nil)
 
      (defn form-flush-in

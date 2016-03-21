@@ -99,15 +99,17 @@
 
 (defmacro let-fetch [bindings & body]
   (let [syms (take-nth 2 bindings)
-        exprs [(for [expr (take-nth 2 (rest bindings))]
-                 `(compile-fetch expr))]]
-    `(let-promise ~(vec (interleave syms exprs)))))
+        exprs (for [expr (take-nth 2 (rest bindings))]
+                `(fetch ~expr))]
+    `(let-promise ~(vec (interleave syms exprs))
+       ~@body)))
 
 (defmacro let-fetch-> [bindings & body]
   (let [syms (take-nth 2 bindings)
-        exprs [(for [expr (take-nth 2 (rest bindings))]
-                 `(compile-fetch expr))]]
-    `(let-promise-> ~(vec (interleave syms exprs)))))
+        exprs (for [expr (take-nth 2 (rest bindings))]
+                `(fetch ~expr))]
+    `(let-promise-> ~(vec (interleave syms exprs))
+       ~@body)))
 
 (defmacro form [opts & fields]
        `(binding [*form-opts* (atom
