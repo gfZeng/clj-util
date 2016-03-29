@@ -277,9 +277,7 @@
                                 true (assoc :headers headers)
                                 (:body settings) (update :body body>))))
                (.then #(.text %))
-               (.then #(js/Promise.
-                        (fn [rs rj]
-                          (rs (body< %)))))))))
+               (.then body<)))))
      (def ^:dynamic *form-opts* nil)
 
      (defn form-flush-in
