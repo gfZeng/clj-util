@@ -257,24 +257,24 @@
        (js/window.location.reload))
 
      (let [format-fns
-           {:edn  {:body> pr-str
-                   :body< reader/read-string
+           {:edn  {:body>   pr-str
+                   :body<   reader/read-string
                    :headers {"Content-Type" "application/edn; charset=UTF-8"}}
-            :json {:body> (comp js/JSON.stringify clj->js)
-                   :body< #(-> % js/JSON.parse
-                               (js->clj :keywordize-keys true))
+            :json {:body>   (comp js/JSON.stringify clj->js)
+                   :body<   #(-> % js/JSON.parse
+                                 (js->clj :keywordize-keys true))
                    :headers {"Content-Type" "application/json; charset=UTF-8"}}}]
-       (defn fetch [{:as settings
+       (defn fetch [{:as   settings
                      :keys [url format body> body<]
-                     :or {format :edn}}]
-         (let [body< (or body< (-> format-fns format :body<))
-               body> (or body> (-> format-fns format :body>))
+                     :or   {format :edn}}]
+         (let [body<   (or body< (-> format-fns format :body<))
+               body>   (or body> (-> format-fns format :body>))
                headers (merge (-> format-fns format :headers)
                               (:headers settings))]
            (-> (js/fetch url (cljs.core/clj->js
                               (cond-> settings
-                                true (dissoc :url :format :body< :body>)
-                                true (assoc :headers headers)
+                                true             (dissoc :url :format :body< :body>)
+                                true             (assoc :headers headers)
                                 (:body settings) (update :body body>))))
                (.then #(.text %))
                (.then body<)))))
@@ -290,7 +290,7 @@
                     js/document.getElementById
                     .-value)))))
 
-     (let [counter (atom -1)
+     (let [counter  (atom -1)
            field-id (fn []
                       (str "field-" (swap! counter inc)))]
        (defn field
@@ -300,30 +300,31 @@
           (field opts attrs nil))
          ([opts attrs option-values]
           (let [opts (if (map? opts) opts {:for opts})]
-            (let [data (:for @*form-opts*)
+            (let [data           (:for @*form-opts*)
                   auto-flush-in? (:auto-flush-in? opts (:auto-flush-in? @*form-opts*))
-                  attrs (-> attrs
-                            (assoc
-                             :id  (or (:id attrs) (field-id))
-                             :value (get-in @data (:for opts))
-                             :on-change
-                             (fn [e]
-                               (when auto-flush-in?
-                                 (swap! data assoc-in (:for opts)
-                                        ((or (:< opts)
-                                             identity)
-                                         (.. e -target -value))))
-                               (when-let [f (:on-change attrs)]
-                                 (f e)))))
-                  attrs (cond-> attrs
-                          option-values (dissoc :value))]
+                  value          (get-in @data (:for opts))
+                  attrs          (-> attrs
+                                     (assoc
+                                      :id  (or (:id attrs) (field-id))
+                                      :on-change
+                                      (fn [e]
+                                        (when auto-flush-in?
+                                          (swap! data assoc-in (:for opts)
+                                                 ((or (:< opts)
+                                                      identity)
+                                                  (.. e -target -value))))
+                                        (when-let [f (:on-change attrs)]
+                                          (f e)))))]
               (swap! *form-opts* update :>fields conj
                      (assoc opts :id (:id attrs)))
               (if option-values
                 [:select attrs
                  (for [[v repr] option-values]
-                   [:option {:value v} repr])]
-                [:input attrs]))))))
+                   [:option {:value v
+                             :selected (when (= value v)
+                                         "selected")}
+                    repr])]
+                [:input (assoc attrs :value value)]))))))
      )
    )
 
