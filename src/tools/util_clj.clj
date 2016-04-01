@@ -71,20 +71,27 @@
        ~@body)))
 
 (defn body-syntax-parse [body]
-  (if (some-> (last body) first
-              (= '.catch))
-    [(butlast body) (let [[_ err & err-body] (last body)]
-                      `(.catch (fn [~err] ~@err-body)))]
-    [body `identity]))
+  (let [[body finally] (if (some-> (last body) first
+                                   (= '.finally))
+                         [(butlast body) (let [[_ err-body] (last body)]
+                                           `(.finally (fn [] ~@err-body)))]
+                         [body nil])
+        [body catch]   (if (some-> (last body) first
+                                   (= '.catch))
+                         [(butlast body) (let [[_ err & err-body] (last body)]
+                                           `(.catch (fn ['~err] ~@err-body)))]
+                         [body nil])]
+    [body (when catch [catch]) (when finally [finally])]))
 
 (defmacro let-promise [bindings & body]
   (let [[body catch] (body-syntax-parse body)]
     `(->
       (js/Promise.all
        (into-array ~(vec (take-nth 2 (rest bindings)))))
-      ~catch
       (.then (fn [[~@(take-nth 2 bindings)]]
-               ~@body)))))
+               ~@body))
+      ~@catch
+      ~@finally)))
 
 (defmacro let-promise-> [bindings & body]
   (let [[body catch] (body-syntax-parse body)
@@ -129,5 +136,5 @@
                              (when-let* [value# (get-in diff-v# (:for f#))
                                          ele# (js/document.getElementById (:id f#))]
                                (-> ele# .-value
-                                   (set! ((or (:> f#) identity) value#))))))))
+                                   (set! ((or (:>> f#) identity) value#))))))))
             [:form ~@fields])))

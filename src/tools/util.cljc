@@ -285,7 +285,7 @@
         (run! #(form-flush-in form-opts %) (:>fields form-opts)))
        ([form-opts f]
         (swap! (:for form-opts) assoc-in (:for f)
-               ((or (:< f) identity)
+               ((or (:<< f) identity)
                 (-> (:id f)
                     js/document.getElementById
                     .-value)))))
@@ -310,7 +310,7 @@
                                       (fn [e]
                                         (when auto-flush-in?
                                           (swap! data assoc-in (:for opts)
-                                                 ((or (:< opts)
+                                                 ((or (:<< opts)
                                                       identity)
                                                   (.. e -target -value))))
                                         (when-let [f (:on-change attrs)]
