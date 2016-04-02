@@ -79,7 +79,7 @@
         [body catch]   (if (some-> (last body) first
                                    (= '.catch))
                          [(butlast body) (let [[_ err & err-body] (last body)]
-                                           `(.catch (fn ['~err] ~@err-body)))]
+                                           `(.catch (fn [~err] ~@err-body)))]
                          [body nil])]
     [body (when catch [catch]) (when finally [finally])]))
 
