@@ -70,21 +70,25 @@
      (when (aget ~sym 0)
        ~@body)))
 
-(defn body-syntax-parse [body]
-  (let [[body finally] (if (some-> (last body) first
-                                   (= '.finally))
-                         [(butlast body) (let [[_ err-body] (last body)]
+(defn parse-fetch-body [body]
+  (let [[body finally] (if (some->> (last body)
+                                    (if-pred seq?)
+                                    first
+                                    (= '.finally))
+                         [(butlast body) (let [[_ & err-body] (last body)]
                                            `(.finally (fn [] ~@err-body)))]
                          [body nil])
-        [body catch]   (if (some-> (last body) first
-                                   (= '.catch))
+        [body catch]   (if (some->> (last body)
+                                    (if-pred seq?)
+                                    first
+                                    (= '.catch))
                          [(butlast body) (let [[_ err & err-body] (last body)]
                                            `(.catch (fn [~err] ~@err-body)))]
                          [body nil])]
     [body (when catch [catch]) (when finally [finally])]))
 
 (defmacro let-promise [bindings & body]
-  (let [[body catch] (body-syntax-parse body)]
+  (let [[body catch finally] (parse-fetch-body body)]
     `(->
       (js/Promise.all
        (into-array ~(vec (take-nth 2 (rest bindings)))))
@@ -94,14 +98,15 @@
       ~@finally)))
 
 (defmacro let-promise-> [bindings & body]
-  (let [[body catch] (body-syntax-parse body)
+  (let [[body catch finally] (parse-fetch-body body)
         expand (fn expand [[sym expr & rest-bindings]]
                  `(-> ~expr
-                      ~catch
                       (.then (fn [~sym]
                                ~@(if rest-bindings
                                    [(expand rest-bindings)]
-                                   body)))))]
+                                   body)))
+                      ~@catch
+                      ~@finally))]
     (expand bindings)))
 
 (defmacro let-fetch [bindings & body]

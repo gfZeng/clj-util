@@ -213,7 +213,7 @@
                    key-step [key-step])]
     (apply conj key-step ks)))
 
-(defn- unquote-form
+(defn unquote-form
   "Inside form, unquoting (~) allows for arbitrary evaluation."
   [args]
   (walk/walk (fn [item]
@@ -228,6 +228,10 @@
              identity
              args))
 
+(defn if-pred [pred? v]
+  (when (pred? v) v))
+
+(def if-seq (partial if-pred seq?))
 
 ;;; ClojureScript
 ;;; =============
