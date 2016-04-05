@@ -260,6 +260,10 @@
      (defn refresh-page []
        (js/window.location.reload))
 
+     (defn fetch* [settings]
+       (js/fetch (:url settings)
+                 (clj->js (dissoc settings :url))))
+
      (let [format-fns
            {:edn  {:body>   pr-str
                    :body<   reader/read-string
@@ -269,17 +273,16 @@
                                  (js->clj :keywordize-keys true))
                    :headers {"Content-Type" "application/json; charset=UTF-8"}}}]
        (defn fetch [{:as   settings
-                     :keys [url format body> body<]
+                     :keys [format body> body<]
                      :or   {format :edn}}]
          (let [body<   (or body< (-> format-fns format :body<))
                body>   (or body> (-> format-fns format :body>))
                headers (merge (-> format-fns format :headers)
                               (:headers settings))]
-           (-> (js/fetch url (cljs.core/clj->js
-                              (cond-> settings
-                                true             (dissoc :url :format :body< :body>)
-                                true             (assoc :headers headers)
-                                (:body settings) (update :body body>))))
+           (-> (fetch* (cond-> settings
+                         true             (dissoc :format :body< :body>)
+                         true             (assoc :headers headers)
+                         (:body settings) (update :body body>)))
                (.then #(.text %))
                (.then body<)))))
      (def ^:dynamic *form-opts* nil)

@@ -88,12 +88,19 @@
     [body (when catch [catch]) (when finally [finally])]))
 
 (defmacro let-promise [bindings & body]
-  (let [[body catch finally] (parse-fetch-body body)]
+  (let [[body catch finally] (parse-fetch-body body)
+        [pre-checker body]   (let [[f & r :as body] body]
+                               (cond
+                                 (not r) [nil body]
+                                 (:pre f) [(:pre f) r]
+                                 :else [nil body]))]
     `(->
       (js/Promise.all
        (into-array ~(vec (take-nth 2 (rest bindings)))))
       (.then (fn [[~@(take-nth 2 bindings)]]
-               ~@body))
+               (cond
+                 ~@pre-checker
+                 :else (do ~@body))))
       ~@catch
       ~@finally)))
 
