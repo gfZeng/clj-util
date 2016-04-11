@@ -238,14 +238,12 @@
 
 #?(:cljs
    (do
-     (defn eval-with-env [env js-code]
-       (let [js-code (reduce #(string/replace
-                               % (re-pattern %2) (str "this['" %2 "']"))
-                             js-code
-                             (map name (keys env)))]
-         (try
-           (.call (fn [] (js/eval js-code)) (clj->js env))
-           (catch js/Error e))))
+     (defn clear-timeout [x]
+       (js/clearTimeout x))
+
+     (defn clear-interval [x]
+       (js/clearInterval x))
+
      (defn pr-money [x]
        (str "￥" (format "%.2f" (or x 0))))
      (defn q [selector]
@@ -259,6 +257,8 @@
 
      (defn refresh-page []
        (js/window.location.reload))
+
+
 
      (defn fetch* [settings]
        (js/fetch (:url settings)

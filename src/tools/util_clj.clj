@@ -150,3 +150,28 @@
                                (-> ele# .-value
                                    (set! ((or (:>> f#) identity) value#))))))))
             [:form ~@fields])))
+
+(defmacro timeout [delay & body]
+  `(let [timeout# (atom nil)]
+     (reset! timeout#
+             (js/setTimeout
+              (fn []
+                (let [~'*timeout* @timeout#]
+                  ~@body))
+              ~delay))))
+
+(defmacro interval [delay & body]
+  `(let [interval# (atom nil)]
+     (reset! interval#
+             (js/setInterval
+              (fn []
+                (let [~'*interval* @interval#]
+                  ~@body))
+              ~delay))))
+
+(defmacro def-timeout-fn [name delay args & body]
+  `(let [timeout# (atom nil)]
+     (defn ~name ~args
+       (when-let [t# @timeout#]
+         (js/clearTimeout t#))
+       (reset! timeout# (js/setTimeout (fn [] ~@body) ~delay)))))
