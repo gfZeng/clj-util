@@ -124,7 +124,7 @@
       (.then (fn [[~@(take-nth 2 bindings)]]
                (cond
                  ~@pre-checker
-                 :else (do ~@body))))
+                   :else (do ~@body))))
       ~@catch
       ~@finally)))
 
@@ -155,25 +155,25 @@
        ~@body)))
 
 (defmacro form [opts & fields]
-       `(binding [*form-opts* (atom
-                               (let [opts# ~opts]
-                                 (if (instance? ~'cljs.core/Atom opts#)
-                                   {:for opts#}
-                                   opts#)))]
-          (let [form-opts# *form-opts*
-                ~'*form-data* (:for @form-opts#)
-                ~'*flush-in* (fn
-                               ([] (form-flush-in @form-opts#))
-                               ([f#] (form-flush-in @form-opts# f#)))]
-            (add-watch ~'*form-data* :update-fields-values
-                       (fn [r# k# ov# nv#]
-                         (let [diff-v# (first (data/diff nv# ov#))]
-                           (doseq [f# (:>fields @form-opts#)]
-                             (when-let* [value# (get-in diff-v# (:for f#))
-                                         ele# (js/document.getElementById (:id f#))]
-                               (-> ele# .-value
-                                   (set! ((or (:>> f#) identity) value#))))))))
-            [:form ~@fields])))
+  `(binding [*form-opts* (atom
+                          (let [opts# ~opts]
+                            (if (instance? ~'cljs.core/Atom opts#)
+                              {:for opts#}
+                              opts#)))]
+     (let [form-opts# *form-opts*
+           ~'*form-data* (:for @form-opts#)
+           ~'*flush-in* (fn
+                          ([] (form-flush-in @form-opts#))
+                          ([f#] (form-flush-in @form-opts# f#)))]
+       (add-watch ~'*form-data* :update-fields-values
+                  (fn [r# k# ov# nv#]
+                    (let [diff-v# (first (data/diff nv# ov#))]
+                      (doseq [f# (:>fields @form-opts#)]
+                        (when-let* [value# (get-in diff-v# (:for f#))
+                                    ele# (js/document.getElementById (:id f#))]
+                          (-> ele# .-value
+                              (set! ((or (:>> f#) identity) value#))))))))
+       [:form ~@fields])))
 
 (defmacro timeout [delay & body]
   `(let [timeout# (atom nil)]
