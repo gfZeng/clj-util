@@ -25,7 +25,8 @@
                 time-zone-id (-> (subs (.getID time-zone) 3)
                                  not-empty
                                  (or "-00:00"))]
-            (doto (java.text.SimpleDateFormat. (str "yyyy-MM-dd'T'HH:mm:ss.SSS" time-zone-id))
+            (doto (java.text.SimpleDateFormat.
+                   (str "yyyy-MM-dd'T'HH:mm:ss.SSS" time-zone-id))
               ;; RFC3339 says to use -00:00 when the timezone is unknown (+00:00 implies a known GMT)
               (.setTimeZone time-zone)))))))))
 
