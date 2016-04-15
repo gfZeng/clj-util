@@ -19,7 +19,7 @@
    (fn thisfn
      ([] (thisfn "GMT"))
      ([time-zone]
-      (proxy [ThreadLocal] []
+      (proxy ThreadLocal []
         (initialValue []
           (let [time-zone (java.util.TimeZone/getTimeZone time-zone)
                 time-zone-id (-> (subs (.getID time-zone) 3)
