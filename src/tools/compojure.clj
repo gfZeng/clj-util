@@ -27,11 +27,22 @@
        (filter #(-> % meta :scope (:only #{fname}) fname))))
 
 
-(defn- params-destruct [keys]
-  (into {} (for [k keys]
-             (if (map? k)
-               `[~k ~(keyword (:as k))]
-               `[~k ~(keyword k)]))))
+(defn- params-destruct [keys params]
+  (loop [bindings         []
+         [x y z :as keys] keys]
+    (cond
+      (nil? x) bindings
+      (= :as x)
+        (recur (conj bindings y params)
+               (nnext keys))
+      (= :<< y)
+        (recur (conj bindings x `(~z (~(keyword x) ~params)))
+               (drop 3 keys))
+      (map? x)
+        (recur (conj bindings x `(~(keyword (:as x)) ~params))
+               (next keys))
+      :else (recur (conj bindings x `(~(keyword x) ~params))
+                   (next keys)))))
 
 (defmacro:def defhandler* [fname args & fdecl]
   (let [fdecl (if-let [pre-chckers (:pre (first fdecl))]
@@ -40,7 +51,8 @@
                          :else (do ~@(rest fdecl))))
                 fdecl)]
     `(defn ~fname [~'*req*]
-       (let [~(params-destruct args) (:params ~'*req*)]
+       (let [~'*params* (:params ~'*req*)
+             ~@(params-destruct args '*params*)]
          ~@fdecl))))
 
 
@@ -54,10 +66,10 @@
     `(defn ~fname [~'*req*]
        (doseq [h# (middlewares-for ~(.toString *ns*) :pre '~fname)]
          (h# ~'*req*))
-       (let [~(params-destruct args)
-             (:params
-              ((apply comp (middlewares-for ~(.toString *ns*) :prepare '~fname))
-               ~'*req*))
+       (let [~'*params* (:params
+                         ((apply comp (middlewares-for ~(.toString *ns*) :prepare '~fname))
+                          ~'*req*))
+             ~@(params-destruct args '*params*)
              ret# ~fdecl]
          (doseq [h# (middlewares-for ~(.toString *ns*) :post '~fname)]
            (h# ~'*req*))
