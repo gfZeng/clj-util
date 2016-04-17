@@ -71,21 +71,44 @@
   (into (empty xs)
         (into (empty xs) (concat (take n xs) [x] (drop n xs)))))
 
-(defn underscore->dash
-  [v]
-  (cond
-    (string? v) (string/replace v #"_" "-")
-    (keyword? v) (keyword (underscore->dash (name v)))
-    (symbol? v) (symbol (underscore->dash (str v)))
-    :else v))
+(defn call [f x]
+  (f x))
 
-(defn dash->underscore
-  [v]
-  (cond
-    (string? v) (string/replace v #"-" "_")
-    (keyword? v) (keyword (dash->underscore (name v)))
-    (symbol? v) (symbol (dash->underscore (str v)))
-    :else v))
+(defn make:x->y [f]
+  (fn [x]
+    (condp call x
+      string? (f x)
+      keyword? (-> x name f keyword)
+      symbol? (-> x name f symbol)
+      :else x)))
+
+(def underscore->dash
+  (make:x->y #(string/replace % #"_" "-")))
+
+(def dash->underscore
+  (make:x->y #(string/replace % #"-" "_")))
+
+(def camelcasize
+  (make:x->y (fn [x]
+               (string/replace x #"[_-](\w)"
+                               #(.toUpperCase (%1 1))))))
+
+(def dashize
+  (make:x->y
+   (fn [x]
+     (string/replace x #"_|[A-Z]"
+                     #(str "-"
+                           (when-not (= "_" %)
+                             (string/lower-case %)))))))
+
+(def underscorize
+  (make:x->y
+   (fn [x]
+     (string/replace x #"-|[A-Z]"
+                     #(str "_"
+                           (when-not (= "-" %)
+                             (string/lower-case %)))))))
+
 
 (defn clojurize
   [m & [{:keys [key-fn skip-item skip-key]
@@ -202,12 +225,6 @@
 (defmacro map-as-> [expr xs & body]
   `(mapv #(as-> % expr body) ~xs))
 
-(defn camel-case [x]
-  (cond
-    (symbol? x) (symbol (camel-case (name x)))
-    (keyword? x) (keyword (camel-case (name x)))
-    :else (string/replace x #"[_-](\w)" #(.toUpperCase (%1 1)))))
-
 (defn keys<< [key-step & ks]
   (let [key-step (if (vector? key-step)
                    key-step [key-step])]
@@ -253,7 +270,7 @@
      (defn data
        ([node] (.-dataset node))
        ([node dname] (-> (data node)
-                         (aget (camel-case (name dname))))))
+                         (aget (camelcasize (name dname))))))
 
      (defn refresh-page []
        (js/window.location.reload))
