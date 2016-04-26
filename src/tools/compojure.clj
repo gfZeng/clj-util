@@ -86,8 +86,8 @@
               (cond
                 (::body (meta res#))      (resp/response res#)
                 (sequential? res#)        {:body res#}
-                (some (partial contains? res#)
-                      [:headers :status]) res#
+                (every? (partial contains? res#)
+                        [:headers :status]) res#
                 :else                     (resp/response res#)))))))))
 
 (defmacro dispatch [handler & {:as bindings}]
