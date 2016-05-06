@@ -80,7 +80,7 @@
       string? (f x)
       keyword? (-> x name f keyword)
       symbol? (-> x name f symbol)
-      :else x)))
+      x)))
 
 (def underscore->dash
   (make:x->y #(string/replace % #"_" "-")))
