@@ -74,7 +74,7 @@
 (defn call [f x]
   (f x))
 
-(defn make:x->y [f]
+(defn mk-naming-style:x->y [f]
   (fn [x]
     (condp call x
       string? (f x)
@@ -83,18 +83,18 @@
       x)))
 
 (def underscore->dash
-  (make:x->y #(string/replace % #"_" "-")))
+  (mk-naming-style:x->y #(string/replace % #"_" "-")))
 
 (def dash->underscore
-  (make:x->y #(string/replace % #"-" "_")))
+  (mk-naming-style:x->y #(string/replace % #"-" "_")))
 
 (def camelcasize
-  (make:x->y (fn [x]
+  (mk-naming-style:x->y (fn [x]
                (string/replace x #"[_-](\w)"
                                #(.toUpperCase (%1 1))))))
 
 (def dashize
-  (make:x->y
+  (mk-naming-style:x->y
    (fn [x]
      (string/replace x #"_|[A-Z]"
                      #(str "-"
@@ -102,7 +102,7 @@
                              (string/lower-case %)))))))
 
 (def underscorize
-  (make:x->y
+  (mk-naming-style:x->y
    (fn [x]
      (string/replace x #"-|[A-Z]"
                      #(str "_"
