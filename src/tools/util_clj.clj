@@ -70,8 +70,6 @@
   (let [bytes (hmac-sha1-bytes key input)]
     (apply str (map (partial format "%02x") bytes))))
 
-(defalias name-with-attributes name-with-attributes')
-
 (compile-if (require 'clj-time.core)
             (load "util_time"))
 

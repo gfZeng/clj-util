@@ -2,8 +2,7 @@
   (:require
    [taoensso.carmine :as car]
    [taoensso.nippy :refer (Freezable write-id id-byte-as-long id-short-as-long id-int-as-long)]
-   [tools.def :refer (when-let*)]
-   [tools.util :as util :refer (name-with-attributes)])
+   [tools.util :as util :refer (when-let* name-with-attributes)])
 
   (:import [java.io DataOutput]))
 

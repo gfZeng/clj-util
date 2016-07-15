@@ -1,6 +1,5 @@
 (ns tools.compojure
-  (:require [tools.util :as util :refer (name-with-attributes)]
-            [tools.def :refer (defmacro:def)]
+  (:require [tools.util :as util :refer (name-with-attributes defmacro:def)]
             [ring.util.response :as resp]))
 
 
